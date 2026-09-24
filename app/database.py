@@ -25,6 +25,9 @@ def _prepare_asyncpg_url(url: str) -> str:
     return urlunparse(parsed._replace(query=""))
 
 
+# Alias for backward compatibility with alembic/env.py imports
+_to_asyncpg_url = _prepare_asyncpg_url
+
 cleaned_db_url = _prepare_asyncpg_url(settings.DATABASE_URL)
 
 engine = create_async_engine(
@@ -46,6 +49,7 @@ AsyncSessionLocal = async_sessionmaker(
 
 class Base(DeclarativeBase):
     """Shared declarative base for all ORM models."""
+
     pass
 
 
