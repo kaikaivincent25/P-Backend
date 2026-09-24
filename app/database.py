@@ -1,18 +1,9 @@
 """
 Async SQLAlchemy 2.0 engine/session setup for Neon Postgres.
-
-Why async: the app also does async I/O for outbound email (aiosmtplib) and
-sits behind slowapi rate limiting on a hot endpoint (/api/contact/). Using
-an async DB driver end-to-end avoids blocking the event loop on every query.
-
-Neon specifics:
-- Neon's connection string uses the `postgresql://` scheme and requires TLS.
-- We swap the scheme to `postgresql+asyncpg://` so SQLAlchemy picks asyncpg.
-- Neon's pooled connection string works fine with SQLAlchemy's own pool;
-  we keep pool_size modest since Render free/starter tiers and Neon's pooler
-  both have connection ceilings.
+Strips query string parameters like `sslmode` and `channel_binding` that `asyncpg` rejects.
 """
 from collections.abc import AsyncGenerator
+from urllib.parse import urlparse, urlunparse
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -22,23 +13,27 @@ from app.config import get_settings
 settings = get_settings()
 
 
-def _to_asyncpg_url(url: str) -> str:
-    if url.startswith("postgresql+asyncpg://"):
-        return url
+def _prepare_asyncpg_url(url: str) -> str:
+    """Convert scheme to postgresql+asyncpg:// and strip query string params."""
     if url.startswith("postgresql://"):
-        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    if url.startswith("postgres://"):  # some providers still hand out this legacy scheme
-        return url.replace("postgres://", "postgresql+asyncpg://", 1)
-    return url
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
 
+    parsed = urlparse(url)
+    # Strip ?sslmode=... & channel_binding=... so asyncpg doesn't throw a TypeError
+    return urlunparse(parsed._replace(query=""))
+
+
+cleaned_db_url = _prepare_asyncpg_url(settings.DATABASE_URL)
 
 engine = create_async_engine(
-    _to_asyncpg_url(settings.DATABASE_URL),
+    cleaned_db_url,
     echo=settings.DEBUG,
     pool_size=5,
     max_overflow=5,
-    pool_pre_ping=True,       # avoids stale-connection errors after Neon idles a connection
-    connect_args={"ssl": True} if "sslmode" not in settings.DATABASE_URL else {},
+    pool_pre_ping=True,
+    connect_args={"ssl": True},  # Enforces SSL cleanly for Neon without query params
 )
 
 AsyncSessionLocal = async_sessionmaker(
