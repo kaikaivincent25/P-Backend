@@ -20,24 +20,17 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from app.models.contact import MessageStatus
 
 
+from pydantic import BaseModel
+from typing import Optional
+
 class ContactMessageCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=150)
-    email: EmailStr
-    phone: str | None = Field(default=None, max_length=40)
-    subject: str = Field(default="", max_length=200)
-    message: str = Field(min_length=1, max_length=5000)
-    intent: str | None = Field(default=None, max_length=100)
-
-    # Honeypot: real users leave this blank. Name deliberately generic/
-    # innocuous-looking on the frontend (e.g. "website"), configurable via
-    # settings.HONEYPOT_FIELD_NAME so it's not hardcoded to one obvious name.
-    website: str | None = Field(default=None, max_length=200)
-
-    @field_validator("name", "subject", "message", "intent")
-    @classmethod
-    def strip_whitespace(cls, v: str | None) -> str | None:
-        return v.strip() if isinstance(v, str) else v
-
+    name: str
+    email: str
+    phone: Optional[str] = None
+    subject: str
+    message: str
+    intent: str
+    honeypot: Optional[str] = None  # Replaced 'website' with 'honeypot'
 
 class ContactMessageOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
