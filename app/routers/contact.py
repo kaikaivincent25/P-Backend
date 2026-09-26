@@ -38,7 +38,8 @@ async def submit_contact_message(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
-    if payload.website:  # honeypot tripped — pretend success, save nothing
+    # FIX 1: Match the field name sent by your React frontend ('honeypot' instead of 'website')
+    if payload.honeypot:  # honeypot tripped — pretend success, save nothing
         return ContactMessageOut(
             id=uuid.uuid4(),
             name=payload.name,
@@ -63,5 +64,18 @@ async def submit_contact_message(
     await db.commit()
     await db.refresh(message)
 
-    background_tasks.add_task(send_contact_notification, message)
+    # FIX 2: Convert to a plain dictionary so the background task doesn't crash 
+    # when the database session closes after returning the 201 response.
+    message_data = {
+        "id": str(message.id),
+        "name": message.name,
+        "email": message.email,
+        "phone": message.phone,
+        "subject": message.subject,
+        "message": message.message,
+        "intent": message.intent,
+    }
+
+    background_tasks.add_task(send_contact_notification, message_data)
+    
     return message

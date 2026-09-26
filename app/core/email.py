@@ -2,51 +2,49 @@
 Async outbound email for contact-form notifications.
 
 Sent from a FastAPI BackgroundTask *after* the response is returned to the
-visitor, so a slow or temporarily-down SMTP server never delays or fails
-their form submission — the message is already safely in the database by
-the time we attempt to email about it.
-
-If SMTP isn't configured (e.g. local dev), EMAIL_ENABLED=False short-
-circuits this to a no-op log line instead of raising.
+visitor.
 """
 import logging
-
 import aiosmtplib
 from email.message import EmailMessage
 
 from app.config import get_settings
-from app.models.contact import ContactMessage
 
 logger = logging.getLogger("app.email")
 
 
-def _build_notification(msg: ContactMessage) -> EmailMessage:
+def _build_notification(msg_data: dict) -> EmailMessage:
     settings = get_settings()
     email = EmailMessage()
     email["From"] = settings.CONTACT_FROM_EMAIL
     email["To"] = settings.OWNER_NOTIFICATION_EMAIL
-    email["Subject"] = f"New portfolio contact: {msg.subject or '(no subject)'}"
+    
+    subject = msg_data.get("subject", "(no subject)")
+    email["Subject"] = f"New portfolio contact: {subject}"
+    
     email.set_content(
         f"New message from your portfolio contact form.\n\n"
-        f"Name: {msg.name}\n"
-        f"Email: {msg.email}\n"
-        f"Phone: {msg.phone or '-'}\n"
-        f"Intent: {msg.intent or '-'}\n"
-        f"Subject: {msg.subject or '-'}\n\n"
-        f"Message:\n{msg.message}\n\n"
-        f"Message ID: {msg.id}\n"
-        f"Received: {msg.created_at}\n"
+        f"Name: {msg_data.get('name')}\n"
+        f"Email: {msg_data.get('email')}\n"
+        f"Phone: {msg_data.get('phone') or '-'}\n"
+        f"Intent: {msg_data.get('intent') or '-'}\n"
+        f"Subject: {subject}\n\n"
+        f"Message:\n{msg_data.get('message')}\n\n"
+        f"Message ID: {msg_data.get('id', 'N/A')}\n"
     )
     return email
 
 
-async def send_contact_notification(msg: ContactMessage) -> None:
+async def send_contact_notification(msg_data: dict) -> None:
     settings = get_settings()
+    msg_id = msg_data.get("id", "Unknown")
+    
     if not settings.EMAIL_ENABLED:
-        logger.info("EMAIL_ENABLED is False — skipping notification for message %s", msg.id)
+        logger.info("EMAIL_ENABLED is False — skipping notification for message %s", msg_id)
         return
 
-    email = _build_notification(msg)
+    email = _build_notification(msg_data)
+    
     try:
         await aiosmtplib.send(
             email,
@@ -56,8 +54,7 @@ async def send_contact_notification(msg: ContactMessage) -> None:
             password=settings.SMTP_PASSWORD or None,
             start_tls=settings.SMTP_USE_TLS,
         )
+        logger.info("Successfully sent contact notification for message %s", msg_id)
     except Exception:
-        # A failed notification email must never surface as an error to the
-        # visitor (the message is already saved) and must never crash a
-        # background task silently — so we log with full context instead.
-        logger.exception("Failed to send contact notification for message %s", msg.id)
+        # Logs the full stack trace to your terminal so you can see if SMTP auth failed
+        logger.exception("Failed to send contact notification for message %s", msg_id)
