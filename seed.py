@@ -158,6 +158,27 @@ async def seed_projects(db, skill_map: dict[str, Skill]):
         print("✓ Created starter Project case study.")
     else:
         print("i Sample project already exists, skipping...")
+    retail_slug = "retail-shop-information-system"
+    stmt = select(Project).where(Project.slug == retail_slug)
+    retail_project = (await db.execute(stmt)).scalar_one_or_none()
+    if retail_project is None:
+        retail_project = Project(
+            title="Retail Shop Information System",
+            slug=retail_slug,
+            summary="A deployed retail shop information system, currently being improved.",
+            description="A retail shop information system I have built and deployed. I am continuing to improve its features and user experience.",
+            live_url="https://retailshop-information-system.vercel.app/",
+            featured=True,
+        )
+        retail_project.stack_tags = [
+            skill_map[name] for name in ["React", "FastAPI", "PostgreSQL"] if name in skill_map
+        ]
+        db.add(retail_project)
+        print("Created Retail Shop Information System project.")
+    else:
+        retail_project.live_url = "https://retailshop-information-system.vercel.app/"
+        retail_project.featured = True
+        print("Updated Retail Shop Information System project.")
 
 
 async def main():
