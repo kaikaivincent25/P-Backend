@@ -15,13 +15,14 @@ class ProjectImageOut(BaseModel):
 
 
 class ProjectListItem(BaseModel):
-    """Lightweight shape for GET /api/projects/ — no description/gallery."""
+    """Card data for GET /api/projects/, including the project's overview."""
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     title: str
     slug: str
     summary: str
+    description: str
     cover_image_url: str | None
     repo_url: str | None
     live_url: str | None
