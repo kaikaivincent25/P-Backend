@@ -42,14 +42,14 @@ structure and query-param filters (`?featured=`, `?stack=`, `?status=`).
 headers, docs disabled in production, `/health` for Render's health check.
 
 ## Security decisions worth knowing about
-- **Admin auth**: `X-API-Key` header, compared with `secrets.compare_digest`
-  (timing-safe). Swap for OAuth2/JWT later without touching route logic —
-  just change `require_admin`.
+- **Admin auth**: direct API clients can use the `X-API-Key` header. The
+  dashboard exchanges the key for an eight-hour HMAC-signed bearer session;
+  both are checked before admin endpoints run.
 - **Honeypot**: a `website` field on the contact form that real users never
   see. If it's filled in, the API returns `201` and *does not touch the
   database* — no error message that would tip off a bot.
-- **Rate limiting**: `POST /api/contact/` only, 5/hour per IP by default
-  (`CONTACT_RATE_LIMIT` in `.env`).
+- **Rate limiting**: contact submissions are limited to 5/hour per IP by
+  default (`CONTACT_RATE_LIMIT`); dashboard sign-in allows 5 attempts/minute.
 - **UUID PKs** on `ContactMessage` so message IDs can't be enumerated.
 - **CORS**: explicit origin allowlist, no wildcard, no credentials.
 - **Prod hardening**: `/docs`, `/redoc`, `/openapi.json` are disabled when
@@ -77,27 +77,30 @@ Visit `http://localhost:8000/docs`.
 4. **Set environment variables** on the Render service (Settings → Environment)
    using `.env.example` as the checklist — especially `DATABASE_URL`,
    `SECRET_KEY`, `ADMIN_API_KEY`, `CORS_ALLOWED_ORIGINS` (your frontend's
-   Render URL), and SMTP settings. Set `ENVIRONMENT=production`.
+   Vercel origin, `https://kaikaivincentwebsite-pi.vercel.app`), and SMTP
+   settings. Set `ENVIRONMENT=production`.
 5. **Run migrations** once the service is up, via Render's Shell tab:
    ```bash
    alembic upgrade head
    python seed.py   # optional
    ```
 6. **Point your frontend** at the Render service URL and confirm
-   `CORS_ALLOWED_ORIGINS` includes it exactly (scheme + host, no trailing slash).
+   `CORS_ALLOWED_ORIGINS` includes the frontend's exact origin (scheme + host,
+   no trailing slash).
 7. **Health check**: set Render's health check path to `/health`.
 
 ## API summary
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | GET | `/api/profile/` | public | profile + nested social links |
-| PATCH | `/api/profile/` | `X-API-Key` | update profile details and social links |
+| PATCH | `/api/profile/` | `X-API-Key` or admin bearer token | update profile details and social links |
 | GET | `/api/skills/` | public | ordered by category, display_order |
 | GET | `/api/projects/` | public | `?featured=true`, `?stack=<skill>` |
 | GET | `/api/projects/{slug}/` | public | full detail + gallery |
 | POST | `/api/contact/` | public, rate-limited | honeypot-protected |
-| GET | `/api/messages/` | `X-API-Key` | `?status=new\|read\|replied\|archived` |
-| PATCH | `/api/messages/{id}/` | `X-API-Key` | update status only |
+| GET | `/api/messages/` | `X-API-Key` or admin bearer token | `?status=new\|read\|replied\|archived` |
+| PATCH | `/api/messages/{id}/` | `X-API-Key` or admin bearer token | update status only |
+| POST | `/api/admin/session/` | admin API key in request body | issue an eight-hour dashboard token (5 attempts/minute) |
 
 ## What's intentionally left for you to fill in
 - Actual avatar/resume/project-image **file uploads** — models store URLs
@@ -130,6 +133,13 @@ Run `alembic upgrade head` before adding Instagram or Facebook links so the
 database enum has those platform values. Never expose the admin API key in
 frontend code or a `VITE_*` environment variable; send this request from a
 trusted shell or API client.
+
+The private frontend dashboard can exchange the admin API key entered by
+the owner for a signed, eight-hour bearer token. The key is checked only by
+the API and is not included in the deployed frontend bundle. Configure
+`SECRET_KEY` as a long, random value in Render because it signs dashboard
+sessions. The frontend sends the token in the `Authorization` header for
+admin-only profile and message actions.
 
 On Windows, save the JSON body as `profile.json` and send it with:
 

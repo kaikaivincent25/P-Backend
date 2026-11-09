@@ -20,7 +20,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
 from app.core.rate_limit import limiter
-from app.routers import contact, messages, profile, projects, skills
+from app.routers import admin, contact, messages, profile, projects, skills
 
 settings = get_settings()
 
@@ -50,7 +50,7 @@ app.add_middleware(
     allow_origins=settings.cors_origins_list,
     allow_credentials=False,   # no cookies/sessions in play — keep this False
     allow_methods=["GET", "POST", "PATCH"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
 
@@ -68,6 +68,7 @@ app.include_router(skills.router)
 app.include_router(projects.router)
 app.include_router(contact.router)
 app.include_router(messages.router)
+app.include_router(admin.router)
 
 
 @app.get("/health", tags=["health"])
