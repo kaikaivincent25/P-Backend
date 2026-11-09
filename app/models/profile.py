@@ -24,6 +24,8 @@ class SocialPlatform(str, enum.Enum):
     github = "github"
     linkedin = "linkedin"
     twitter = "twitter"
+    instagram = "instagram"
+    facebook = "facebook"
     email = "email"
     website = "website"
     other = "other"
@@ -35,7 +37,9 @@ class SocialPlatform(str, enum.Enum):
 _PLATFORM_URL_PREFIXES = {
     SocialPlatform.github: "https://github.com/",
     SocialPlatform.linkedin: "https://linkedin.com/in/",
-    SocialPlatform.twitter: "https://twitter.com/",
+    SocialPlatform.twitter: "https://x.com/",
+    SocialPlatform.instagram: "https://www.instagram.com/",
+    SocialPlatform.facebook: "https://www.facebook.com/",
     SocialPlatform.email: "mailto:",
 }
 

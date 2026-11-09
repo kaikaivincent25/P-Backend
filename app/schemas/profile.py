@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.profile import AvailabilityStatus, SocialPlatform
 
@@ -28,3 +28,20 @@ class ProfileOut(BaseModel):
     resume_url: str | None
     updated_at: datetime
     social_links: list[SocialLinkOut] = []
+
+
+class SocialLinkUpdate(BaseModel):
+    platform: SocialPlatform
+    value: str = Field(min_length=1, max_length=255)
+    display_order: int = 0
+
+
+class ProfileUpdate(BaseModel):
+    name: str | None = Field(default=None, max_length=150)
+    tagline: str | None = Field(default=None, max_length=255)
+    bio: str | None = None
+    education: str | None = None
+    availability_status: AvailabilityStatus | None = None
+    avatar_url: str | None = Field(default=None, max_length=500)
+    resume_url: str | None = Field(default=None, max_length=500)
+    social_links: list[SocialLinkUpdate] | None = None

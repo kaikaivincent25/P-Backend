@@ -40,7 +40,7 @@ async def seed_profile(db) -> Profile:
             education="BBIT, The Co-operative University of Kenya (expected December 2026)",
             availability_status=AvailabilityStatus.open_to_offers,
             avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=500",
-            resume_url="https://example.com/resume.pdf",
+            resume_url=None,
         )
         db.add(profile)
         await db.flush()  # Ensure profile.id is available for FKs
@@ -61,7 +61,7 @@ async def seed_profile(db) -> Profile:
             SocialLink(
                 profile_id=1,
                 platform=SocialPlatform.twitter,
-                value="https://twitter.com/kaikaivincent",
+                value="https://x.com/kaikaivincent",
                 display_order=3,
             ),
             SocialLink(

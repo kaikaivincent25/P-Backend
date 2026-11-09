@@ -91,6 +91,7 @@ Visit `http://localhost:8000/docs`.
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | GET | `/api/profile/` | public | profile + nested social links |
+| PATCH | `/api/profile/` | `X-API-Key` | update profile details and social links |
 | GET | `/api/skills/` | public | ordered by category, display_order |
 | GET | `/api/projects/` | public | `?featured=true`, `?stack=<skill>` |
 | GET | `/api/projects/{slug}/` | public | full detail + gallery |
@@ -102,6 +103,39 @@ Visit `http://localhost:8000/docs`.
 - Actual avatar/resume/project-image **file uploads** — models store URLs
   (`avatar_url`, `cover_image_url`, `image_url`); wire these to S3/Cloudinary/
   Render disk depending on where you want assets to live.
-- A first Alembic migration (`alembic revision --autogenerate`) — not
-  committed, since it should be generated once you confirm the schema fits
-  your data.
+
+## Updating profile and social links
+
+The public `GET /api/profile/` route is read-only. To update the profile, call
+`PATCH /api/profile/` with the admin `X-API-Key` header. Social-link values
+can be either a username/handle or a complete profile URL. If `social_links`
+is included, it replaces the profile's existing social links; send an empty
+array to remove them. Do not send an individual post URL.
+
+For example, replace the example handles with the usernames or profile URLs
+you actually use:
+
+```json
+{
+  "resume_url": "https://your-hosted-resume-url/resume.pdf",
+  "social_links": [
+    { "platform": "instagram", "value": "your_instagram_username", "display_order": 1 },
+    { "platform": "facebook", "value": "https://www.facebook.com/your.profile", "display_order": 2 },
+    { "platform": "twitter", "value": "https://x.com/your_x_username", "display_order": 3 }
+  ]
+}
+```
+
+Run `alembic upgrade head` before adding Instagram or Facebook links so the
+database enum has those platform values. Never expose the admin API key in
+frontend code or a `VITE_*` environment variable; send this request from a
+trusted shell or API client.
+
+On Windows, save the JSON body as `profile.json` and send it with:
+
+```powershell
+curl.exe -X PATCH "https://YOUR-API-HOST/api/profile/" `
+  -H "X-API-Key: YOUR_ADMIN_API_KEY" `
+  -H "Content-Type: application/json" `
+  --data-binary "@profile.json"
+```
