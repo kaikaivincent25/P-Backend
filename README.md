@@ -78,8 +78,8 @@ Visit `http://localhost:8000/docs`.
    using `.env.example` as the checklist — especially `DATABASE_URL`,
    `SECRET_KEY`, `ADMIN_API_KEY`, `CORS_ALLOWED_ORIGINS` (include the exact
    frontend origin `https://vincentkaikai.vercel.app`), and SMTP
-   settings. Set `ENVIRONMENT=production`. If `CORS_ALLOWED_ORIGINS` is
-   already set in Render, update that value; it overrides the code default.
+   settings. Set `ENVIRONMENT=production`. The two portfolio Vercel domains
+   are always allowed; use `CORS_ALLOWED_ORIGINS` to add any other origins.
 5. **Run migrations** once the service is up, via Render's Shell tab:
    ```bash
    alembic upgrade head
@@ -89,9 +89,7 @@ Visit `http://localhost:8000/docs`.
    `https://p-backend-bukd.onrender.com/api` and confirm
    `CORS_ALLOWED_ORIGINS` includes the frontend's exact origin (scheme + host,
    no trailing slash). The default allowlist includes the deployed Vercel
-   origins and local Vite origin (`http://localhost:5173`). If the Render
-   environment variable is set, update it to include
-   `https://vincentkaikai.vercel.app`.
+   origins and local Vite origin (`http://localhost:5173`).
 7. **Health check**: set Render's health check path to `/health`.
 
 ## API summary

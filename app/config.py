@@ -40,7 +40,16 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        return [origin.strip() for origin in self.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()]
+        configured_origins = [
+            origin.strip().rstrip("/")
+            for origin in self.CORS_ALLOWED_ORIGINS.split(",")
+            if origin.strip().rstrip("/")
+        ]
+        portfolio_origins = [
+            "https://vincentkaikai.vercel.app",
+            "https://kaikaivincentwebsite-pi.vercel.app",
+        ]
+        return list(dict.fromkeys([*configured_origins, *portfolio_origins]))
 
     # --- Email (contact form notifications) ---
     SMTP_HOST: str = "smtp.gmail.com"
