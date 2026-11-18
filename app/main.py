@@ -10,8 +10,7 @@ Wiring order matters:
      CORS_ALLOWED_ORIGINS (your deployed frontend + local dev), never "*",
      since the API accepts credentialless but PII-bearing POSTs.
   4. Include routers.
-  5. A couple of small hardening touches: hide docs in production, add a
-     baseline set of security response headers.
+  5. Add a baseline set of security response headers.
 """
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,11 +26,9 @@ settings = get_settings()
 app = FastAPI(
     title="Portfolio API",
     version="1.0.0",
-    # Swagger/ReDoc are handy in dev but needlessly expose your schema
-    # (including the shape of admin endpoints) to the public in prod.
-    docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
-    redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
-    openapi_url="/openapi.json" if settings.ENVIRONMENT != "production" else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 app.state.limiter = limiter

@@ -32,7 +32,9 @@ class Settings(BaseSettings):
     ADMIN_API_KEY: str  # long random string, sent as `X-API-Key` header
 
     # --- CORS ---
-    CORS_ALLOWED_ORIGINS: str = "http://localhost:3000"
+    CORS_ALLOWED_ORIGINS: str = (
+        "http://localhost:5173,https://kaikaivincentwebsite-pi.vercel.app"
+    )
 
     @property
     def cors_origins_list(self) -> List[str]:

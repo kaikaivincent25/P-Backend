@@ -118,9 +118,15 @@ async def seed_skills(db) -> dict[str, Skill]:
 
 
 async def seed_projects(db, skill_map: dict[str, Skill]):
-    slug = "personal-portfolio-api"
+    slug = "personal-portfolio"
     stmt = select(Project).where(Project.slug == slug)
     existing = (await db.execute(stmt)).scalar_one_or_none()
+
+    if existing is None:
+        legacy_stmt = select(Project).where(Project.slug == "personal-portfolio-api")
+        existing = (await db.execute(legacy_stmt)).scalar_one_or_none()
+        if existing is not None:
+            existing.slug = slug
 
     if existing is None:
         project = Project(

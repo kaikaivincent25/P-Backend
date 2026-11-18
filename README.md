@@ -39,7 +39,7 @@ structure and query-param filters (`?featured=`, `?stack=`, `?status=`).
 
 **Phase 6 — Wiring & deployment**
 `app/main.py` ties it together: CORS locked to explicit origins, security
-headers, docs disabled in production, `/health` for Render's health check.
+headers, public Swagger/ReDoc docs, `/health` for Render's health check.
 
 ## Security decisions worth knowing about
 - **Admin auth**: direct API clients can use the `X-API-Key` header. The
@@ -52,8 +52,8 @@ headers, docs disabled in production, `/health` for Render's health check.
   default (`CONTACT_RATE_LIMIT`); dashboard sign-in allows 5 attempts/minute.
 - **UUID PKs** on `ContactMessage` so message IDs can't be enumerated.
 - **CORS**: explicit origin allowlist, no wildcard, no credentials.
-- **Prod hardening**: `/docs`, `/redoc`, `/openapi.json` are disabled when
-  `ENVIRONMENT=production`.
+- **API docs**: Swagger (`/docs`), ReDoc (`/redoc`), and the OpenAPI schema
+  (`/openapi.json`) are public in all environments, including production.
 
 ## Local development
 ```bash
@@ -76,17 +76,20 @@ Visit `http://localhost:8000/docs`.
    - **Environment**: Python 3.11+
 4. **Set environment variables** on the Render service (Settings → Environment)
    using `.env.example` as the checklist — especially `DATABASE_URL`,
-   `SECRET_KEY`, `ADMIN_API_KEY`, `CORS_ALLOWED_ORIGINS` (your frontend's
-   Vercel origin, `https://kaikaivincentwebsite-pi.vercel.app`), and SMTP
-   settings. Set `ENVIRONMENT=production`.
+   `SECRET_KEY`, `ADMIN_API_KEY`, `CORS_ALLOWED_ORIGINS` (include the exact
+   frontend origin `https://kaikaivincentwebsite-pi.vercel.app`), and SMTP
+   settings. Set `ENVIRONMENT=production`. If `CORS_ALLOWED_ORIGINS` is
+   already set in Render, update that value; it overrides the code default.
 5. **Run migrations** once the service is up, via Render's Shell tab:
    ```bash
    alembic upgrade head
-   python seed.py   # optional
+   python seed.py   # creates starter records and normalizes the portfolio project slug
    ```
-6. **Point your frontend** at the Render service URL and confirm
+6. **Point your frontend** at
+   `https://p-backend-bukd.onrender.com/api` and confirm
    `CORS_ALLOWED_ORIGINS` includes the frontend's exact origin (scheme + host,
-   no trailing slash).
+   no trailing slash). The default allowlist includes the deployed Vercel
+   origin and local Vite origin (`http://localhost:5173`).
 7. **Health check**: set Render's health check path to `/health`.
 
 ## API summary
