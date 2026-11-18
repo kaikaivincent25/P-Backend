@@ -23,7 +23,7 @@ class Project(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
     slug: Mapped[str] = mapped_column(String(220), unique=True, index=True)
-    summary: Mapped[str] = mapped_column(String(500), default="")
+    summary: Mapped[str] = mapped_column(String(2000), default="")
     description: Mapped[str] = mapped_column(Text, default="")
     cover_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     repo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
