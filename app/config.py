@@ -33,7 +33,9 @@ class Settings(BaseSettings):
 
     # --- CORS ---
     CORS_ALLOWED_ORIGINS: str = (
-        "http://localhost:5173,https://kaikaivincentwebsite-pi.vercel.app"
+        "http://localhost:5173,"
+        "https://vincentkaikai.vercel.app,"
+        "https://kaikaivincentwebsite-pi.vercel.app"
     )
 
     @property
